@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>ShadowsOfDoubtHeadTracking</AssemblyName>
+    <RootNamespace>ShadowsOfDoubtHeadTracking</RootNamespace>
+    <Version>1.0.4</Version>
+    <LangVersion>10.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <OutputType>Library</OutputType>
+    <Authors>itsloopyo</Authors>
+    <Copyright>Copyright (c) 2026 itsloopyo</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Head tracking mod for Shadows of Doubt (IL2CPP) using CameraUnlock.Core</Description>
+    <!-- Suppress NU1702: CameraUnlock.Core.Unity targets .NET Framework but works fine with net6.0 -->
+    <NoWarn>$(NoWarn);NU1702</NoWarn>
+  </PropertyGroup>
+
+  <!-- CameraUnlock shared libraries -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\cameraunlock-core\csharp\src\CameraUnlock.Core\CameraUnlock.Core.csproj" />
+    <ProjectReference Include="..\..\cameraunlock-core\csharp\src\CameraUnlock.Core.Unity\CameraUnlock.Core.Unity.csproj" />
+  </ItemGroup>
+
+  <!-- NuGet packages: BepInEx, Unity, IL2CPP -->
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.753" />
+    <PackageReference Include="UnityEngine.Modules" Version="2021.3.45" />
+    <PackageReference Include="Il2CppInterop.ReferenceLibs" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="libs\**" />
+    <None Remove="libs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ShadowsOfDoubtHeadTracking.Tests" />
+  </ItemGroup>
+</Project>

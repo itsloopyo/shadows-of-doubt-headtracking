@@ -1,0 +1,68 @@
+# Build output
+bin/
+obj/
+
+# Game reference DLLs and stubs (populated at build time)
+src/*/libs/
+
+# NuGet
+packages/
+*.nupkg
+
+# Release packaging
+dist/
+release/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Pixi
+.pixi/
+
+# AI tooling
+.claude/
+.claude.json
+.millhouse/
+.lab/
+.mcp.json
+.mcp/
+.agents/
+.serena/
+.cursor/
+.windsurf/
+.aider*
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+skills/
+.skills/
+
+# Session scratch and reverse-engineering output
+scratch/
+.scratch/
+tmp/
+temp/
+ghidra/
+.ghidra/
+*.gpr
+*.rep/
+decompiled/
+dumps/
+*.dmp
+captures/
+screenshots/
+*.log
+
+# Install state
+.headtracking-state.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NexusMods page copy source
+NEXUS_MODS.md

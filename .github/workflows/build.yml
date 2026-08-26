@@ -1,0 +1,85 @@
+name: Build
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+
+jobs:
+  build:
+    name: Build and Validate
+    runs-on: windows-latest
+    # Checkout and artifact upload only. Without this the job inherits the
+    # repository default, which on repos created before the read-only default
+    # hands every push - including one from a fork's PR head - a token that can
+    # write contents, packages and releases.
+    permissions:
+      contents: read
+    if: ${{ !startsWith(github.event.head_commit.message, 'Release v') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # v0.9.6
+
+      # Same pixi task a developer runs, and ahead of packaging so a failure
+      # blocks the artifact rather than shipping beside it.
+      - name: Test
+        shell: pwsh
+        run: pixi run test
+
+      # Build + package through the SAME command a developer runs locally. Every
+      # build dependency is produced by scripts/setup-libs.ps1 inside the pixi
+      # task chain - no build logic lives in this workflow, so local and CI
+      # can't drift.
+      - name: Build and package
+        shell: pwsh
+        run: pixi run package
+
+      # Unzip the installer into a folder so upload-artifact doesn't nest a
+      # zip inside its own zip.
+      - name: Stage installer contents for artifact
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem release/*-installer.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $zip) {
+            Write-Host "::error::No installer ZIP was produced by 'pixi run package'"
+            exit 1
+          }
+          $dest = "release/artifact-contents"
+          New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          Expand-Archive -Path $zip.FullName -DestinationPath $dest -Force
+          Write-Host "Staged $($zip.Name)" -ForegroundColor Green
+
+      - name: Compute artifact name from ref
+        id: artifact
+        shell: pwsh
+        run: |
+          $branch = "${{ github.ref_name }}" -replace '[^A-Za-z0-9._-]', '-'
+          echo "name=ShadowsOfDoubtHeadTracking-$branch" >> $env:GITHUB_OUTPUT
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: release/artifact-contents/
+          retention-days: 14
+          if-no-files-found: error
