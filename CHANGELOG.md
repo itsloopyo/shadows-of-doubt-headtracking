@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added the mod itself: head tracking for Shadows of Doubt over the OpenTrack
+  UDP protocol, decoupled from aim, with 6DOF lean
 - Added centring of the game window on its monitor at startup when it opens
   windowed. It used to land against the top-left of the desktop, which on a very
   wide monitor puts the view a long way off to one side of where your tracker is
@@ -61,82 +63,3 @@
   connection-selected value as rotation
 - Removed the hidden 0.15 baseline smoothing floor, so local trackers get
   zero-latency tracking by default
-
-## [1.0.4] - 2026-05-01
-
-### Added
-
-- add Invoke-FetchLatestLoader and Refresh-VendoredLoader helpers
-
-### Changed
-
-- Hello World
-- Switch from manual DLL references to NuGet packages
-- Health check: config-driven position settings, fix CHANGELOG, add THIRD-PARTY-NOTICES
-- 6DOF head tracking with decoupled look+aim and interaction fixes
-- Add receive timestamp getter and fix crosshair projection model
-- Fix changelog generation crash when repo has no tags
-- Change TrackerPivotForward default from 0.15f to 0.01f
-- Include THIRD-PARTY-NOTICES in release ZIPs
-- Fix branch redirect in InjectCallBeforeReturn
-- Fix SRP callback registration with IL-emitted DynamicMethod wrappers
-- Fix position interpolator sample timing and decay curve
-- Add Xbox/Microsoft Store path detection for Firewatch
-- Remove smoothing threshold bypass so minimum smoothing always applies
-- Use spherical coordinate projection for reticle and add frame interpolation floor to smoothing
-- Rename GitHub release zip to -installer suffix
-- Add SmoothedEulerState and PositionApplicator shared utilities
-- Reduce default Z position limit from 0.20m to 0.10m to prevent camera clipping through the player model
-- Add asymmetric Z position limit (limit_z_back) to prevent backward camera clipping
-- Fix swapped Z clamp bounds in PositionProcessor
-- Add neck pivot overloads, per-axis Euler smoothing, and hotkey config entries
-- Remove isRemoteConnection parameter, apply baseline smoothing unconditionally
-- Clarify crosshair projection comment
-- Add projection distance parameter to CalculateAimScreenOffset
-- Add NET35 compatibility to ViewMatrixModifier for pre-Unity 2017.1 targets
-- Add Screencheat and Zeepkist to game path detection configs
-- Halve frame interpolation speed to smooth tracker sample boundaries
-- Add SubnauticaBelowZero and SonsOfTheForest game path configs
-- Add CalculateScreenOffsetFromWorldPoint for parallax-correct reticle positioning
-- Remove NeckModel from position processing pipeline
-- Refactor PoseInterpolator and PositionInterpolator for clarity
-- Switch release to prebuilt DLLs and reusable workflow
-- Add automatic port retry to OpenTrackReceiver
-- Rate-limit scene/focus polling in GameplayStateDetector
-- Vendor BepInEx 6 IL2CPP and align with shared install-time doctrine
-- Add prediction-error correction to interpolators for smooth high-FPS output
-- Port linear interpolation and quaternion SLERP smoothing from C# core
-- Add gui_marker_compensation.h for RE Engine GUI world-anchor tracking
-- Add REFramework utilities module (cameraunlock_reframework)
-- Add velocity extrapolation to interpolators for smooth high-refresh output
-- Gate UnityEngine.InputLegacyModule reference on file existence
-- Fix batch paren-poisoning in install.cmd template
-- Move game detection to data-driven games.json
-- Fix install.cmd/uninstall.cmd templates for dev-tree use
-- Unify installer CLI across BepInEx/MelonLoader/Cecil/ASI/REFramework/shim
-- Make vendored loaders the install-time source of truth
-- Add Step-SemanticVersion and Resolve-ReleaseVersion helpers
-- Add camera discovery module (RTTI vtable + float classifier)
-- Add AGENTS.md with shared code-quality and library API rules
-- Expand submodule pointer commits in generated changelogs
-- Fix /y flag detection and bundle vendored BepInEx in installers
-- Use WriteAllBytes for .cmd output to avoid Defender race
-- Add DX11 overlay header for crosshair rendering
-- Adopt unified launcher contract and add yaw/cycle-mode hotkeys
-
-## [1.0.3] - 2026-02-26
-
-### Changed
-- Updated smoothing note to mention filtered signal for direct phone tracking.
-
-## [1.0.1] - 2026-02-26
-
-### Fixed
-- Fixed package install to generate a real install.ps1 with game detection.
-
-## [1.0.0] - 2026-02-24
-
-### Added
-- Initial release of Shadows of Doubt Head Tracking mod.
-- Head tracking support via OpenTrack UDP protocol.
-- Switched from manual DLL references to NuGet packages.
