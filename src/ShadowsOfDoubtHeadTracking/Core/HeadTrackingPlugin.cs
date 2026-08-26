@@ -27,7 +27,7 @@ public class HeadTrackingPlugin : BasePlugin
 {
     public const string PluginGuid = "com.headtracking.shadowsofdoubt";
     public const string PluginName = "Head Tracking";
-    public const string PluginVersion = "1.0.4";
+    public const string PluginVersion = "0.0.0";
 
     internal static ManualLogSource Logger { get; private set; } = null!;
 

@@ -85,8 +85,8 @@ If you want curve mapping, a visual preview, or extra filtering, route through O
 The mod writes `HeadTracking.log` next to `Shadows of Doubt.exe`, starting fresh
 on every launch. A working session opens with:
 ```
-Head Tracking v1.0.4 - session started 2026-01-01 12:00:00
-[12:00:00] [Info] Head Tracking v1.0.4 loaded - tracking is ENABLED on startup
+Head Tracking v0.0.0 - session started 2026-01-01 12:00:00
+[12:00:00] [Info] Head Tracking v0.0.0 loaded - tracking is ENABLED on startup
 [12:00:07] [Info] Listening for tracker data on UDP port 4242
 [12:00:31] [Info] Head tracking camera: Map/Player/.../Main Camera
 ```

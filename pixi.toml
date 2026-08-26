@@ -1,6 +1,6 @@
 [workspace]
 name = "shadows-of-doubt-head-tracking"
-version = "1.0.4"
+version = "0.0.0"
 description = "Head tracking mod for Shadows of Doubt using CameraUnlock shared library"
 channels = ["conda-forge"]
 platforms = ["win-64"]
