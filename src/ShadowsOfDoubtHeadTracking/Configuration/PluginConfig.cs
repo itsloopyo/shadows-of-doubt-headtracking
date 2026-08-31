@@ -288,7 +288,7 @@ public sealed class PluginConfig
         PositionLimitX = config.Bind(
             "Position",
             "PositionLimitX",
-            0.30f,
+            CameraUnlock.Core.Data.PositionSettings.Default.LimitX,
             new ConfigDescription(
                 "Maximum lateral displacement in meters",
                 new AcceptableValueRange<float>(0.01f, 0.5f)
@@ -318,7 +318,7 @@ public sealed class PluginConfig
         PositionLimitZ = config.Bind(
             "Position",
             "PositionLimitZ",
-            0.40f,
+            CameraUnlock.Core.Data.PositionSettings.Default.LimitZ,
             new ConfigDescription(
                 "Maximum forward displacement in meters",
                 new AcceptableValueRange<float>(0.01f, 0.5f)
@@ -328,7 +328,7 @@ public sealed class PluginConfig
         PositionLimitZBack = config.Bind(
             "Position",
             "PositionLimitZBack",
-            0.10f,
+            CameraUnlock.Core.Data.PositionSettings.Default.LimitZBack,
             new ConfigDescription(
                 "Maximum backward displacement in meters. Leaning back is restricted more tightly than leaning forward to stop the camera pulling into the player body.",
                 new AcceptableValueRange<float>(0.01f, 0.5f)
@@ -338,7 +338,7 @@ public sealed class PluginConfig
         LocalSmoothing = config.Bind(
             "Smoothing",
             "LocalSmoothing",
-            0.0f,
+            CameraUnlock.Core.Math.SmoothingUtils.DefaultLocalSmoothing,
             new ConfigDescription(
                 "Smoothing applied when the tracker runs on this machine (loopback). " +
                 "0 = no smoothing, 1 = heavy. Covers rotation and position.",
@@ -349,7 +349,7 @@ public sealed class PluginConfig
         RemoteSmoothing = config.Bind(
             "Smoothing",
             "RemoteSmoothing",
-            0.15f,
+            CameraUnlock.Core.Math.SmoothingUtils.DefaultRemoteSmoothing,
             new ConfigDescription(
                 "Smoothing applied when the tracker is a remote device on the network. " +
                 "0 = no smoothing, 1 = heavy. Covers rotation and position.",
