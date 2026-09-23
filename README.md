@@ -13,6 +13,7 @@ An unofficial head tracking mod for Shadows of Doubt that moves the view with yo
 
 - **Decoupled look and aim** - head tracking moves the camera; aim stays on your mouse or controller
 - **6DOF positional tracking** - lean and peek with head position, not just rotation
+- **Works with any OpenTrack compatible tracker** - free options available for PC, iOS and Android
 
 ## Requirements
 
@@ -21,6 +22,13 @@ An unofficial head tracking mod for Shadows of Doubt that moves the view with yo
 - Windows 10 or 11 (64-bit)
 
 ## Installation
+
+### Lopari
+
+Download [Lopari](https://lopari.app), choose **Shadows of Doubt**, and click
+**Play with head tracking**.
+
+### Standalone Installer
 
 1. Download the installer ZIP from the [Releases page](https://github.com/itsloopyo/shadows-of-doubt-headtracking/releases).
 2. Extract the ZIP anywhere.
