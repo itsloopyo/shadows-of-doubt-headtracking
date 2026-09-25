@@ -16,6 +16,13 @@ set "BEPINEX_ARCH=x64"
 set "BEPINEX_VENDOR_ZIP_NAME=BepInEx_UnityIL2CPP_x64.zip"
 set "BEPINEX_SUBFOLDER="
 set "MOD_CONTROLS=Controls:&echo   End       or Ctrl+Shift+Y - Toggle on/off&echo   Page Up   or Ctrl+Shift+G - Cycle tracking mode&echo   Page Down or Ctrl+Shift+H - Toggle yaw mode (world/local)"
+:: Not used by this mod. Set blank so a value another mod's wrapper left in
+:: the same console does not reach the body.
+set "PLUGIN_SUBFOLDER="
+set "IL2CPP_VENDOR_DIR_NAME="
+set "IL2CPP_VENDOR_ZIP_NAME="
+set "IL2CPP_PLUGIN_DIR_NAME="
+set "IL2CPP_MOD_DLLS="
 :: --- END CONFIG BLOCK ---
 
 :: Pin delayed expansion off before `%*` is expanded on the `call` below.
