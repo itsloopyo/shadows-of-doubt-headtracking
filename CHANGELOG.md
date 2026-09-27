@@ -33,7 +33,6 @@
 - Settings move to `BepInEx\config\CameraUnlock.ini`. Earlier versions of the mod kept these settings in `com.headtracking.shadowsofdoubt.cfg`, in the same folder. The first time this version starts and finds no `CameraUnlock.ini`, it reads your settings from `com.headtracking.shadowsofdoubt.cfg` and writes them into `CameraUnlock.ini`. It never changes `com.headtracking.shadowsofdoubt.cfg`, and does not read it again while `CameraUnlock.ini` exists.
 - A setting that the defaults the README shows set to `default` is written as `default` when you never changed it from the default earlier versions used, because `com.headtracking.shadowsofdoubt.cfg` does not hold it or holds that default. It then follows `Defaults.ini`, so it takes the value `Defaults.ini` gives it, or the built-in value where `Defaults.ini` gives none, which can differ from the default earlier versions used. A setting you changed is written with the value imported for it, or as `default` where that value equals its default at that start.
 - `RotationEnabled` and `PositionEnabled` are one setting here, the tracking mode, so both are written as `default` or neither is.
-- The upward and downward lean limits, `PositionLimitY` and `PositionLimitYDown`, now default to 0.2 m each, the built-in value `Defaults.ini` gives them. Earlier versions defaulted to 0.15 m up and 0.05 m down. Where you never changed them, they are written as `default` and follow `Defaults.ini`. To keep the old travel in this game, write `PositionLimitY=0.15` and `PositionLimitYDown=0.05` in `CameraUnlock.ini`.
 - The key that cycles the tracking mode is `CycleTrackingModeKey` in `CameraUnlock.ini`. Earlier versions called it `TogglePositionKey`.
 - Comments, and keys the mod never read, are not carried over. Nor are these, where your old file had them:
   - A sensitivity, scale, deadzone, response curve or axis inversion you changed from its default. Set these in your tracker instead.
@@ -47,6 +46,7 @@
 
 ### Fixed
 
+- Fixed the vertical lean limits being smaller than in the other head tracking mods. Earlier versions shipped 0.15 m up and 0.05 m down; `PositionLimitY` and `PositionLimitYDown` now match the other mods at 0.20 m up and 0.20 m down, unless you changed them. Where you never changed them they are written as `default` and follow `Defaults.ini`, whose built-in value is 0.20 m. To keep the old travel in this game, write `PositionLimitY=0.15` and `PositionLimitYDown=0.05` in `CameraUnlock.ini`.
 - Fixed the camera freezing at the last head-tracked rotation when you disabled
   head tracking, entered a menu or lost tracker data, whenever positional tracking
   was off. Handing the camera back to Unity is now tracked separately from the lean
