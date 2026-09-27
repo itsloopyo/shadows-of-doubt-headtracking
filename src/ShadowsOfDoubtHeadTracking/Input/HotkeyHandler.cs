@@ -26,18 +26,17 @@ namespace ShadowsOfDoubtHeadTracking.Input;
 /// </summary>
 public sealed class HotkeyHandler
 {
-    private readonly PluginConfig _config;
+    private readonly ModConfig _config;
 
     private bool _initialized;
     private int _toggleCount;
     private DateTime _lastToggleTime;
 
-    // Cached KeyCodes to avoid BepInEx ConfigEntry<T>.Value getter overhead per frame
     private KeyCode _cachedToggleKey;
     private KeyCode _cachedCycleModeKey;
     private KeyCode _cachedYawModeKey;
 
-    public HotkeyHandler(PluginConfig config)
+    internal HotkeyHandler(ModConfig config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
@@ -56,10 +55,9 @@ public sealed class HotkeyHandler
         _toggleCount = 0;
         _lastToggleTime = DateTime.MinValue;
 
-        // Cache KeyCodes to avoid BepInEx ConfigEntry<T>.Value getter overhead per frame
-        _cachedToggleKey = _config.ToggleKey.Value;
-        _cachedCycleModeKey = _config.CycleTrackingModeKey.Value;
-        _cachedYawModeKey = _config.YawModeKey.Value;
+        _cachedToggleKey = _config.ToggleKey;
+        _cachedCycleModeKey = _config.CycleTrackingModeKey;
+        _cachedYawModeKey = _config.YawModeKey;
 
         HeadTrackingPlugin.Logger.LogInfo(
             $"Hotkeys initialized: nav-cluster {_cachedToggleKey}/{_cachedCycleModeKey}/{_cachedYawModeKey} (Toggle/CycleMode/YawMode); chords Ctrl+Shift+Y/G/H");

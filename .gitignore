@@ -4,6 +4,7 @@ obj/
 
 # Game reference DLLs and stubs (populated at build time)
 src/*/libs/
+tests/*/libs/
 
 # NuGet
 packages/

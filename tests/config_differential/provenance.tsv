@@ -1,0 +1,29 @@
+# What the differential test compares, and where each file came from.
+# Columns: role, source (commit:path, a release asset, or the path in this repo), sha256 of the bytes.
+# The one published build is the rolling dev pre-release, 0.0.0-nightly.20260826.f3e1875, built
+# from f3e1875. There is no v* release and no predecessor repo. The oracle is
+# Configuration/PluginConfig.cs at f3e1875 byte for byte, and it uses no core code. The reader in
+# src/ShadowsOfDoubtHeadTracking/Legacy was frozen from the file at c631db6, which differs from
+# f3e1875's only in taking five defaults (LimitX 0.30, LimitZ 0.40, LimitZBack 0.10, LocalSmoothing
+# 0, RemoteSmoothing 0.15) from core's constants of the same values (91cc94e); the frozen reader
+# holds them as literals, restructured to fill LegacyConfig and write nothing.
+published reader	f3e1875:src/ShadowsOfDoubtHeadTracking/Configuration/PluginConfig.cs	a2b2a0fd53492b4d179620f9789859ea08ced01fd03ba7dcefda426a6484e96b
+frozen from	c631db6:src/ShadowsOfDoubtHeadTracking/Configuration/PluginConfig.cs	2ca7e7726011fb73b7c42c5cf5a28baf3eb0456883db0e7b09ecd974f1a1248a
+oracle copy	tests/config_differential/oracle/PluginConfig.cs	a2b2a0fd53492b4d179620f9789859ea08ced01fd03ba7dcefda426a6484e96b
+frozen reader	src/ShadowsOfDoubtHeadTracking/Legacy/LegacyConfig.cs	43b376fbfc6ee6ebc17a97d071d62df087a67a39d94ed11403074ccb7b5e6746
+frozen reader	src/ShadowsOfDoubtHeadTracking/Legacy/LegacyConfigReader.cs	5ef70e469d235249cc3f7500d2dc29b1f4e9c43a393eba0982e14a0b782014db
+frozen reader	src/ShadowsOfDoubtHeadTracking/Legacy/LegacyConfigKeys.cs	4c0a37760317160a9e7c3d840add2e3e866d794fafcd60bc1beed0ef52d97fc4
+BepInEx 6	vendor/bepinex/BepInEx_UnityIL2CPP_x64.zip	2a7cbf74d26abe4765c3e662db1721b923bac39849ebfef2ca5dc7de7e2d9b7f
+# BepInEx 6.0.0-be.785. The test, and the first-run harness below, ran its BepInEx/core/BepInEx.Core.dll
+# (sha256 352aacc2d5356489a00891f76db28b6463c81d25bcb02f90035171a669b7e35b), which the game loads.
+# No published build shipped the plugin .cfg, in its ZIP or as a launcher-manifest.json seed, so the
+# input is what the build writes at its first start: the .cfg its own ShadowsOfDoubtHeadTracking.dll,
+# taken from the dev pre-release's installer ZIP (the ZIP's SHA-256 checked against the digest GitHub
+# reports for the asset), writes when its PluginConfig.Initialize runs on a ConfigFile at a path with
+# no file and the plugin's BepInPlugin metadata (com.headtracking.shadowsofdoubt, Head Tracking, 0.0.0,
+# read from the DLL), as BasePlugin builds it. It ran on .NET 6.0.36 with that BepInEx.Core.dll and the
+# UnityEngine.CoreModule of the UnityEngine.Modules 2021.3.45 package the DLL was built against. The
+# "Acceptable values" comment lines list whichever KeyCode enum the harness loaded; in game they list
+# the one the game's interop assemblies hold. No reader reads a comment line.
+input source	release dev ShadowsOfDoubtHeadTracking-dev-installer.zip 92b216e819181e8fef64496d288a91d360c822a47c4314066c74cdd5f9f0d4fb plugins/ShadowsOfDoubtHeadTracking.dll 2fb7bc30b39d7c4917e8057ea1fd466986190ed947ae0c279973d70d6a2e62b3	-
+input	tests/config_differential/data/first-run/dev.cfg	928c7aeb73bbc3f3b8330f83225e771e731c8a585a859eafead3d15ecc724d87

@@ -115,7 +115,7 @@ public class HeadTrackingBehaviour : MonoBehaviour
     /// Initialize the behaviour with all required dependencies.
     /// Must be called after the component is added to a GameObject.
     /// </summary>
-    public void Initialize(OpenTrackReceiver receiver, TrackingProcessor processor, PluginConfig config,
+    internal void Initialize(OpenTrackReceiver receiver, TrackingProcessor processor, ModConfig config,
         PositionProcessor? positionProcessor = null, PositionInterpolator? positionInterpolator = null)
     {
         _receiver = receiver;
@@ -123,10 +123,10 @@ public class HeadTrackingBehaviour : MonoBehaviour
         _positionProcessor = positionProcessor;
         _positionInterpolator = positionInterpolator;
 
-        _pauseOnLostFocus = config.PauseOnLostFocus.Value;
-        _worldSpaceYaw = config.WorldSpaceYaw.Value;
-        _positionEnabled = config.PositionEnabled.Value;
-        _fieldOfView = new FieldOfViewOffset(config.FieldOfViewOffset.Value);
+        _pauseOnLostFocus = config.PauseOnLostFocus;
+        _worldSpaceYaw = config.WorldSpaceYaw;
+        _positionEnabled = config.PositionEnabled;
+        _fieldOfView = new FieldOfViewOffset(config.FieldOfViewOffset);
 
         _cameraFinder = new CameraFinder();
         _cameraFinder.OnCameraChanged += OnCameraChanged;
@@ -139,7 +139,7 @@ public class HeadTrackingBehaviour : MonoBehaviour
         _stateDetector.SetCameraFinder(_cameraFinder);
         _stateDetector.OnGameplayStateChanged += OnGameplayStateChanged;
 
-        RigProbe.Enabled = config.DiagnosticLogging.Value;
+        RigProbe.Enabled = config.DiagnosticLogging;
         if (RigProbe.Enabled)
         {
             gameObject.AddComponent<FramePhaseProbe>();

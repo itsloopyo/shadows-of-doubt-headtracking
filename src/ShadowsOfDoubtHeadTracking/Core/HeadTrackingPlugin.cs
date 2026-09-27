@@ -13,6 +13,7 @@ using ShadowsOfDoubtHeadTracking.Boot;
 using ShadowsOfDoubtHeadTracking.Camera;
 using ShadowsOfDoubtHeadTracking.Configuration;
 using ShadowsOfDoubtHeadTracking.Diagnostics;
+using ShadowsOfDoubtHeadTracking.Legacy;
 using Il2CppInterop.Runtime.Injection;
 using UnityEngine;
 
@@ -41,7 +42,7 @@ public class HeadTrackingPlugin : BasePlugin
     private TrackingProcessor? _processor;
     private PositionProcessor? _positionProcessor;
     private PositionInterpolator? _positionInterpolator;
-    private PluginConfig? _config;
+    private ModConfig? _config;
     private Harmony? _harmony;
     private LogFile? _logFile;
 
@@ -57,8 +58,7 @@ public class HeadTrackingPlugin : BasePlugin
 
         ApplyHarmonyPatches();
 
-        var config = new PluginConfig();
-        config.Initialize(Config);
+        ModConfig config = LoadConfig();
         _config = config;
 
         _receiver = new OpenTrackReceiver();
@@ -70,10 +70,48 @@ public class HeadTrackingPlugin : BasePlugin
 
         StartReceiver(_receiver);
 
-        ModState.Instance.IsEnabled = config.EnabledOnStartup.Value;
+        ModState.Instance.IsEnabled = config.EnabledOnStartup;
 
         Logger.LogInfo($"{PluginName} v{PluginVersion} loaded - tracking is " +
                        $"{(ModState.Instance.IsEnabled ? "ENABLED" : "DISABLED")} on startup");
+    }
+
+    /// <summary>
+    /// Reads the plugin's .cfg through the frozen reader, then saves it once, which is the write
+    /// every published build's Bind calls made at each start.
+    /// </summary>
+    private ModConfig LoadConfig()
+    {
+        LegacyConfig legacy = LegacyConfigReader.Read(Config, out _);
+        Config.Save();
+        return new ModConfig
+        {
+            YawSensitivity = legacy.YawSensitivity,
+            PitchSensitivity = legacy.PitchSensitivity,
+            RollSensitivity = legacy.RollSensitivity,
+            EnabledOnStartup = legacy.EnabledOnStartup,
+            WorldSpaceYaw = legacy.WorldSpaceYaw,
+            InvertYaw = legacy.InvertYaw,
+            InvertPitch = legacy.InvertPitch,
+            InvertRoll = legacy.InvertRoll,
+            ToggleKey = legacy.ToggleKey,
+            CycleTrackingModeKey = legacy.CycleTrackingModeKey,
+            YawModeKey = legacy.YawModeKey,
+            PauseOnLostFocus = legacy.PauseOnLostFocus,
+            DiagnosticLogging = legacy.DiagnosticLogging,
+            FieldOfViewOffset = legacy.FieldOfViewOffset,
+            PositionEnabled = legacy.PositionEnabled,
+            PositionSensitivityX = legacy.PositionSensitivityX,
+            PositionSensitivityY = legacy.PositionSensitivityY,
+            PositionSensitivityZ = legacy.PositionSensitivityZ,
+            PositionLimitX = legacy.PositionLimitX,
+            PositionLimitY = legacy.PositionLimitY,
+            PositionLimitYDown = legacy.PositionLimitYDown,
+            PositionLimitZ = legacy.PositionLimitZ,
+            PositionLimitZBack = legacy.PositionLimitZBack,
+            LocalSmoothing = legacy.LocalSmoothing,
+            RemoteSmoothing = legacy.RemoteSmoothing,
+        };
     }
 
     private void ApplyHarmonyPatches()
@@ -94,41 +132,41 @@ public class HeadTrackingPlugin : BasePlugin
         }
     }
 
-    private static TrackingProcessor BuildRotationProcessor(PluginConfig config)
+    private static TrackingProcessor BuildRotationProcessor(ModConfig config)
     {
         return new TrackingProcessor
         {
             // Selected per connection: loopback senders get LocalSmoothing, remote
             // network devices get RemoteSmoothing. Both cover rotation and position.
-            LocalSmoothing = config.LocalSmoothing.Value,
-            RemoteSmoothing = config.RemoteSmoothing.Value,
+            LocalSmoothing = config.LocalSmoothing,
+            RemoteSmoothing = config.RemoteSmoothing,
             Sensitivity = new SensitivitySettings(
-                config.YawSensitivity.Value,
-                config.PitchSensitivity.Value,
-                config.RollSensitivity.Value,
-                invertYaw: config.InvertYaw.Value,
-                invertPitch: config.InvertPitch.Value,
-                invertRoll: config.InvertRoll.Value
+                config.YawSensitivity,
+                config.PitchSensitivity,
+                config.RollSensitivity,
+                invertYaw: config.InvertYaw,
+                invertPitch: config.InvertPitch,
+                invertRoll: config.InvertRoll
             ),
             Deadzone = DeadzoneSettings.None
         };
     }
 
-    private static PositionProcessor BuildPositionProcessor(PluginConfig config)
+    private static PositionProcessor BuildPositionProcessor(ModConfig config)
     {
         return new PositionProcessor
         {
             Settings = new PositionSettings(
-                config.PositionSensitivityX.Value,
-                config.PositionSensitivityY.Value,
-                config.PositionSensitivityZ.Value,
-                config.PositionLimitX.Value,
-                config.PositionLimitY.Value,
-                config.PositionLimitYDown.Value,
-                config.PositionLimitZ.Value,
-                config.PositionLimitZBack.Value,
-                localSmoothing: config.LocalSmoothing.Value,
-                remoteSmoothing: config.RemoteSmoothing.Value,
+                config.PositionSensitivityX,
+                config.PositionSensitivityY,
+                config.PositionSensitivityZ,
+                config.PositionLimitX,
+                config.PositionLimitY,
+                config.PositionLimitYDown,
+                config.PositionLimitZ,
+                config.PositionLimitZBack,
+                localSmoothing: config.LocalSmoothing,
+                remoteSmoothing: config.RemoteSmoothing,
                 invertX: true, invertY: false, invertZ: false
             )
         };
@@ -141,10 +179,10 @@ public class HeadTrackingPlugin : BasePlugin
     /// cannot collect it.
     /// </summary>
     private static void CreateBehaviour(OpenTrackReceiver receiver, TrackingProcessor processor,
-        PluginConfig config, PositionProcessor positionProcessor, PositionInterpolator positionInterpolator)
+        ModConfig config, PositionProcessor positionProcessor, PositionInterpolator positionInterpolator)
     {
         ClassInjector.RegisterTypeInIl2Cpp<HeadTrackingBehaviour>();
-        if (config.DiagnosticLogging.Value)
+        if (config.DiagnosticLogging)
         {
             ClassInjector.RegisterTypeInIl2Cpp<FramePhaseProbe>();
         }
