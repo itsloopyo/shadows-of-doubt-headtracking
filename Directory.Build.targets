@@ -30,6 +30,7 @@
     <Compile Remove="Utilities\GameUIFinder.cs" />
     <Compile Remove="Extensions\UnityHotkeyHandler.cs" />
     <Compile Remove="Utilities\CrosshairUtility.cs" />
+    <Compile Remove="Effects\HeadFollowLightRenderHook.cs" />
   </ItemGroup>
 
   <!-- UnityEngine.UI (UGUI) ships only inside a built Unity game and is not
