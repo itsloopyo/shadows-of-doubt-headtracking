@@ -2,12 +2,7 @@
 
 ![Shadows of Doubt running with this mod](https://raw.githubusercontent.com/itsloopyo/shadows-of-doubt-headtracking/main/assets/readme-clip.gif)
 
-An unofficial head tracking mod for Shadows of Doubt that moves the view with your head while your mouse or controller keeps aiming, driven by OpenTrack over UDP, with no VR headset required.
-
-> [!CAUTION]
-> **Early dev build**
->
-> This mod has not been comprehensively tested. It may be buggy.
+An unofficial head tracking mod for Shadows of Doubt that moves the view with your head while your mouse or controller keeps aiming, driven by a webcam, phone, or any OpenTrack compatible tracker, with no VR headset required.
 
 ## Features
 
