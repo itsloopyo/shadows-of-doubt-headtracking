@@ -2,10 +2,13 @@
 // Copyright (c) 2026 itsloopyo
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
+using CameraUnlock.Core.Config;
 using CameraUnlock.Core.Data;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
@@ -13,7 +16,6 @@ using ShadowsOfDoubtHeadTracking.Boot;
 using ShadowsOfDoubtHeadTracking.Camera;
 using ShadowsOfDoubtHeadTracking.Configuration;
 using ShadowsOfDoubtHeadTracking.Diagnostics;
-using ShadowsOfDoubtHeadTracking.Legacy;
 using Il2CppInterop.Runtime.Injection;
 using UnityEngine;
 
@@ -42,7 +44,7 @@ public class HeadTrackingPlugin : BasePlugin
     private TrackingProcessor? _processor;
     private PositionProcessor? _positionProcessor;
     private PositionInterpolator? _positionInterpolator;
-    private ModConfig? _config;
+    private ConfigOwner<ShadowsOfDoubtConfig>? _configOwner;
     private Harmony? _harmony;
     private LogFile? _logFile;
 
@@ -58,60 +60,79 @@ public class HeadTrackingPlugin : BasePlugin
 
         ApplyHarmonyPatches();
 
-        ModConfig config = LoadConfig();
-        _config = config;
+        ShadowsOfDoubtConfig config = LoadConfig();
 
         _receiver = new OpenTrackReceiver();
         _processor = BuildRotationProcessor(config);
         _positionProcessor = BuildPositionProcessor(config);
         _positionInterpolator = new PositionInterpolator();
 
-        CreateBehaviour(_receiver, _processor, config, _positionProcessor, _positionInterpolator);
+        CreateBehaviour(_receiver, _processor, config, _positionProcessor, _positionInterpolator, SaveConfig);
 
         StartReceiver(_receiver);
 
-        ModState.Instance.IsEnabled = config.EnabledOnStartup;
+        ModState.Instance.IsEnabled = config.EnableOnStartup;
 
         Logger.LogInfo($"{PluginName} v{PluginVersion} loaded - tracking is " +
                        $"{(ModState.Instance.IsEnabled ? "ENABLED" : "DISABLED")} on startup");
     }
 
     /// <summary>
-    /// Reads the plugin's .cfg through the frozen reader, then saves it once, which is the write
-    /// every published build's Bind calls made at each start.
+    /// The settings live in BepInEx\config\CameraUnlock.ini, read and written by core's config
+    /// owner, with rows set to default following the player's Defaults.ini. Nothing is bound on
+    /// the plugin's Config, so ConfigurationManager does not list them. While CameraUnlock.ini is
+    /// absent the owner imports the plugin's .cfg, the file every earlier build read, through the
+    /// frozen reader on a ConfigFile of its own, and never writes that file.
+    ///
+    /// The mod has nothing on screen to show a message with, so the owner's messages for the
+    /// player go to the log beside its other lines.
     /// </summary>
-    private ModConfig LoadConfig()
+    private ShadowsOfDoubtConfig LoadConfig()
     {
-        LegacyConfig legacy = LegacyConfigReader.Read(Config, out _);
-        Config.Save();
-        return new ModConfig
+        ConfigOwnerOptions<ShadowsOfDoubtConfig> options =
+            ShadowsOfDoubtConfig.Options(ConfigPath, Config.ConfigFilePath, DefaultsFile.PerUser());
+        options.StatusSink = message => Logger.LogWarning(message);
+        _configOwner = new ConfigOwner<ShadowsOfDoubtConfig>(options);
+
+        ConfigLoadResult<ShadowsOfDoubtConfig> loaded = _configOwner.Load();
+
+        // The owner writes each diagnostic as "<path>: <description>" among lines that only
+        // report what it did, so the complaints are picked out by their text.
+        var complaints = new HashSet<string>();
+        foreach (CanonicalDiagnostic diagnostic in loaded.Diagnostics)
         {
-            YawSensitivity = legacy.YawSensitivity,
-            PitchSensitivity = legacy.PitchSensitivity,
-            RollSensitivity = legacy.RollSensitivity,
-            EnabledOnStartup = legacy.EnabledOnStartup,
-            WorldSpaceYaw = legacy.WorldSpaceYaw,
-            InvertYaw = legacy.InvertYaw,
-            InvertPitch = legacy.InvertPitch,
-            InvertRoll = legacy.InvertRoll,
-            ToggleKey = legacy.ToggleKey,
-            CycleTrackingModeKey = legacy.CycleTrackingModeKey,
-            YawModeKey = legacy.YawModeKey,
-            PauseOnLostFocus = legacy.PauseOnLostFocus,
-            DiagnosticLogging = legacy.DiagnosticLogging,
-            FieldOfViewOffset = legacy.FieldOfViewOffset,
-            PositionEnabled = legacy.PositionEnabled,
-            PositionSensitivityX = legacy.PositionSensitivityX,
-            PositionSensitivityY = legacy.PositionSensitivityY,
-            PositionSensitivityZ = legacy.PositionSensitivityZ,
-            PositionLimitX = legacy.PositionLimitX,
-            PositionLimitY = legacy.PositionLimitY,
-            PositionLimitYDown = legacy.PositionLimitYDown,
-            PositionLimitZ = legacy.PositionLimitZ,
-            PositionLimitZBack = legacy.PositionLimitZBack,
-            LocalSmoothing = legacy.LocalSmoothing,
-            RemoteSmoothing = legacy.RemoteSmoothing,
-        };
+            complaints.Add(ConfigPath + ": " + diagnostic.Describe());
+        }
+        bool usable = loaded.Status == ConfigLoadStatus.Canonical
+                      || loaded.Status == ConfigLoadStatus.Migrated
+                      || loaded.Status == ConfigLoadStatus.Created;
+        foreach (string line in loaded.Log)
+        {
+            if (usable && !complaints.Contains(line)) Logger.LogInfo(line);
+            else Logger.LogWarning(line);
+        }
+        Logger.LogInfo($"Config {ConfigPath}: {loaded.Status}");
+        return loaded.Config;
+    }
+
+    private static string ConfigPath => Path.Combine(Paths.ConfigPath, "CameraUnlock.ini");
+
+    /// <summary>
+    /// Called after the new value is already applied. A save that fails is logged and the
+    /// session keeps the new value.
+    /// </summary>
+    private void SaveConfig(Action<ShadowsOfDoubtConfig> change)
+    {
+        ConfigSaveResult saved = _configOwner!.Save(change);
+        if (saved.Status == ConfigSaveStatus.Saved)
+        {
+            // A row that held default and now holds a value, so it stops following
+            // Defaults.ini in this game.
+            foreach (string line in saved.Log) Logger.LogInfo(line);
+            return;
+        }
+        foreach (string line in saved.Log) Logger.LogWarning(line);
+        Logger.LogWarning($"{ConfigPath}: {saved.Status}: {saved.Reason} The change applies to this session only.");
     }
 
     private void ApplyHarmonyPatches()
@@ -132,7 +153,15 @@ public class HeadTrackingPlugin : BasePlugin
         }
     }
 
-    private static TrackingProcessor BuildRotationProcessor(ModConfig config)
+    // The published builds shipped pitch inverted and every position axis at 2.0, as settings.
+    // They are this engine's conversion from the tracker's axes, so they stay, in code.
+    private const float PositionMultiplier = 2.0f;
+
+    /// <summary>
+    /// The rotation pipeline applies no sensitivity and no deadzone. Pitch is inverted, which is
+    /// the conversion from OpenTrack's pitch sign to Unity's.
+    /// </summary>
+    private static TrackingProcessor BuildRotationProcessor(ShadowsOfDoubtConfig config)
     {
         return new TrackingProcessor
         {
@@ -140,31 +169,24 @@ public class HeadTrackingPlugin : BasePlugin
             // network devices get RemoteSmoothing. Both cover rotation and position.
             LocalSmoothing = config.LocalSmoothing,
             RemoteSmoothing = config.RemoteSmoothing,
-            Sensitivity = new SensitivitySettings(
-                config.YawSensitivity,
-                config.PitchSensitivity,
-                config.RollSensitivity,
-                invertYaw: config.InvertYaw,
-                invertPitch: config.InvertPitch,
-                invertRoll: config.InvertRoll
-            ),
+            Sensitivity = new SensitivitySettings(1f, 1f, 1f, invertYaw: false, invertPitch: true, invertRoll: false),
             Deadzone = DeadzoneSettings.None
         };
     }
 
-    private static PositionProcessor BuildPositionProcessor(ModConfig config)
+    private static PositionProcessor BuildPositionProcessor(ShadowsOfDoubtConfig config)
     {
         return new PositionProcessor
         {
             Settings = new PositionSettings(
-                config.PositionSensitivityX,
-                config.PositionSensitivityY,
-                config.PositionSensitivityZ,
-                config.PositionLimitX,
-                config.PositionLimitY,
-                config.PositionLimitYDown,
-                config.PositionLimitZ,
-                config.PositionLimitZBack,
+                PositionMultiplier,
+                PositionMultiplier,
+                PositionMultiplier,
+                config.Position.LimitX,
+                config.Position.LimitY,
+                config.Position.LimitYDown,
+                config.Position.LimitZ,
+                config.Position.LimitZBack,
                 localSmoothing: config.LocalSmoothing,
                 remoteSmoothing: config.RemoteSmoothing,
                 invertX: true, invertY: false, invertZ: false
@@ -179,7 +201,8 @@ public class HeadTrackingPlugin : BasePlugin
     /// cannot collect it.
     /// </summary>
     private static void CreateBehaviour(OpenTrackReceiver receiver, TrackingProcessor processor,
-        ModConfig config, PositionProcessor positionProcessor, PositionInterpolator positionInterpolator)
+        ShadowsOfDoubtConfig config, PositionProcessor positionProcessor, PositionInterpolator positionInterpolator,
+        Action<Action<ShadowsOfDoubtConfig>> saveConfig)
     {
         ClassInjector.RegisterTypeInIl2Cpp<HeadTrackingBehaviour>();
         if (config.DiagnosticLogging)
@@ -192,7 +215,7 @@ public class HeadTrackingPlugin : BasePlugin
         UnityEngine.Object.DontDestroyOnLoad(_behaviourObject);
 
         _behaviour = _behaviourObject.AddComponent<HeadTrackingBehaviour>();
-        _behaviour.Initialize(receiver, processor, config, positionProcessor, positionInterpolator);
+        _behaviour.Initialize(receiver, processor, config, saveConfig, positionProcessor, positionInterpolator);
     }
 
     private static void StartReceiver(OpenTrackReceiver receiver)

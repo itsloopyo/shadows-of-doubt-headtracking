@@ -2,67 +2,43 @@
 // Copyright (c) 2026 itsloopyo
 
 using System;
+using System.Collections.Generic;
+using CameraUnlock.Core.Input;
 using CameraUnlock.Core.Unity.Extensions;
 using ShadowsOfDoubtHeadTracking.Configuration;
 using ShadowsOfDoubtHeadTracking.Core;
-using UnityEngine;
 
 namespace ShadowsOfDoubtHeadTracking.Input;
 
 /// <summary>
-/// Handles hotkey input for head tracking actions.
-///
-/// Two equivalent binding sets are registered simultaneously:
-/// - Nav-cluster: End (toggle), Page Up (cycle tracking mode),
-///   Page Down (toggle yaw mode)
-/// - Chord (Y/G/H cluster): Ctrl+Shift+Y, Ctrl+Shift+G, Ctrl+Shift+H
-///
-/// Either binding fires the same handler. Edge detection is handled by
-/// Input.GetKeyDown for the primary key of each set, so holding the modifier
-/// keys does not double-fire the action.
+/// Fires the mod's hotkey actions from the key lists in CameraUnlock.ini: ToggleKey,
+/// CycleTrackingModeKey and YawModeKey. Every binding in a list is an ordinary item, the
+/// Ctrl+Shift chords included, so the defaults (End, Page Up and Page Down, each with its
+/// chord) are rebindable like any other key.
 ///
 /// Hotkeys work regardless of gameplay state, allowing users to toggle
 /// tracking even in menus.
 /// </summary>
 public sealed class HotkeyHandler
 {
-    private readonly ModConfig _config;
+    private readonly string _toggleKeyName;
+    private readonly KeyBinding[] _toggle;
+    private readonly KeyBinding[] _cycleTrackingMode;
+    private readonly KeyBinding[] _yawMode;
 
-    private bool _initialized;
     private int _toggleCount;
-    private DateTime _lastToggleTime;
+    private DateTime _lastToggleTime = DateTime.MinValue;
 
-    private KeyCode _cachedToggleKey;
-    private KeyCode _cachedCycleModeKey;
-    private KeyCode _cachedYawModeKey;
-
-    internal HotkeyHandler(ModConfig config)
+    internal HotkeyHandler(ShadowsOfDoubtConfig config)
     {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-    }
-
-    /// <summary>
-    /// Initialize hotkey handler.
-    /// </summary>
-    public void Initialize()
-    {
-        if (_initialized)
-        {
-            HeadTrackingPlugin.Logger.LogWarning("HotkeyHandler already initialized");
-            return;
-        }
-
-        _toggleCount = 0;
-        _lastToggleTime = DateTime.MinValue;
-
-        _cachedToggleKey = _config.ToggleKey;
-        _cachedCycleModeKey = _config.CycleTrackingModeKey;
-        _cachedYawModeKey = _config.YawModeKey;
+        _toggleKeyName = config.ToggleKeyName;
+        _toggle = Parse("ToggleKey", config.ToggleKeyName);
+        _cycleTrackingMode = Parse("CycleTrackingModeKey", config.CycleTrackingModeKeyName);
+        _yawMode = Parse("YawModeKey", config.YawModeKeyName);
 
         HeadTrackingPlugin.Logger.LogInfo(
-            $"Hotkeys initialized: nav-cluster {_cachedToggleKey}/{_cachedCycleModeKey}/{_cachedYawModeKey} (Toggle/CycleMode/YawMode); chords Ctrl+Shift+Y/G/H");
-
-        _initialized = true;
+            $"Hotkeys: [{config.ToggleKeyName}] toggle, [{config.CycleTrackingModeKeyName}] cycle tracking mode, " +
+            $"[{config.YawModeKeyName}] yaw mode");
     }
 
     /// <summary>
@@ -71,22 +47,17 @@ public sealed class HotkeyHandler
     /// </summary>
     public void ProcessInput()
     {
-        if (!_initialized)
-        {
-            return;
-        }
-
-        if (ChordHotkeys.IsActionPressed(_cachedToggleKey, ChordHotkeys.ToggleLetter))
+        if (KeyBindingInput.IsTriggered(_toggle))
         {
             FireToggle();
         }
 
-        if (ChordHotkeys.IsActionPressed(_cachedCycleModeKey, ChordHotkeys.PositionLetter))
+        if (KeyBindingInput.IsTriggered(_cycleTrackingMode))
         {
             HeadTrackingBehaviour.CycleTrackingMode();
         }
 
-        if (ChordHotkeys.IsActionPressed(_cachedYawModeKey, ChordHotkeys.FourthToggleLetter))
+        if (KeyBindingInput.IsTriggered(_yawMode))
         {
             HeadTrackingBehaviour.ToggleYawMode();
         }
@@ -104,6 +75,23 @@ public sealed class HotkeyHandler
             $"Head tracking {(newState ? "ENABLED" : "DISABLED")}");
     }
 
+    // The table's hotkey codec has read every list the file holds, so a list that does not parse
+    // reaches here only from a legacy import the owner deferred: a .cfg key code Unity names no key
+    // for, which the import writes as the number. The items that parse, the chord among them, are
+    // bound and the rest are named in the log.
+    private static KeyBinding[] Parse(string key, string text)
+    {
+        if (KeyBindings.TryParse(text, out KeyBinding[] bindings, out _)) return bindings;
+
+        var kept = new List<KeyBinding>();
+        foreach (string item in text.Split(','))
+        {
+            if (KeyBindings.TryParse(item, out bindings, out string? error)) kept.AddRange(bindings);
+            else HeadTrackingPlugin.Logger.LogWarning($"[Hotkeys] {key}: {error}, so it is not bound this session");
+        }
+        return kept.ToArray();
+    }
+
     /// <summary>
     /// Get diagnostic information about hotkey handler state.
     /// </summary>
@@ -111,8 +99,8 @@ public sealed class HotkeyHandler
     {
         return new HotkeyDiagnostics
         {
-            IsInitialized = _initialized,
-            ToggleKey = _cachedToggleKey,
+            IsInitialized = true,
+            ToggleKey = _toggleKeyName,
             ToggleCount = _toggleCount,
             LastToggleTime = _lastToggleTime,
             IsTrackingEnabled = ModState.Instance.IsEnabled

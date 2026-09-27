@@ -12,10 +12,15 @@ restore = "dotnet restore src/ShadowsOfDoubtHeadTracking/ShadowsOfDoubtHeadTrack
 setup = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/setup-libs.ps1", depends-on = ["restore"] }
 build = { cmd = "dotnet build src/ShadowsOfDoubtHeadTracking/ShadowsOfDoubtHeadTracking.csproj -c Release", depends-on = ["setup"] }
 # The mod's own tests, then the config tests, among them the differential test in
-# tests/config_differential, which holds the frozen legacy reader to the published build's own
-# reader on its first-run file and on core's mutation corpus. What the mod does to the camera is
-# checked by an in-game pass.
-test = { cmd = "dotnet test src/ShadowsOfDoubtHeadTracking.Tests/ShadowsOfDoubtHeadTracking.Tests.csproj -c Release && dotnet test tests/ShadowsOfDoubtHeadTracking.ConfigTests/ShadowsOfDoubtHeadTracking.ConfigTests.csproj -c Release", depends-on = ["build"] }
+# tests/config_differential, which holds the legacy import to the published build's own reader on
+# its first-run file and on core's mutation corpus, then core's canonical config lint over the
+# committed file and every file the test migrated. What the mod does to the camera is checked by an
+# in-game pass.
+test = { cmd = "dotnet test src/ShadowsOfDoubtHeadTracking.Tests/ShadowsOfDoubtHeadTracking.Tests.csproj -c Release && dotnet test tests/ShadowsOfDoubtHeadTracking.ConfigTests/ShadowsOfDoubtHeadTracking.ConfigTests.csproj -c Release && node tests/config_differential/lint-migrated.mjs tests/ShadowsOfDoubtHeadTracking.ConfigTests/bin/Release/net8.0/migrated", depends-on = ["build"] }
+# Rewrites config/CameraUnlock.ini from the config table after a change to a row, a comment or a
+# default. The render test compares the two on every `pixi run test`, so the committed file cannot
+# drift from the code.
+render-config = { cmd = "dotnet test tests/ShadowsOfDoubtHeadTracking.ConfigTests/ShadowsOfDoubtHeadTracking.ConfigTests.csproj -c Release --filter FullyQualifiedName~ConfigTests.CommittedFileIsTheRenderedDefaults && node cameraunlock-core/scripts/encode-seed.mjs", env = { CAMERAUNLOCK_RENDER_CONFIG = "write" }, depends-on = ["build"] }
 install = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1 Release", depends-on = ["build"] }
 package = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1", depends-on = ["test"] }
 uninstall = "scripts\\uninstall.cmd"
@@ -25,8 +30,20 @@ clean = "dotnet clean src/ShadowsOfDoubtHeadTracking/ShadowsOfDoubtHeadTracking.
 # Manual; commit the result. CI does not run this.
 update-deps = "powershell -ExecutionPolicy Bypass -File scripts/update-deps.ps1"
 
+# The two content gates over a built package. validate-manifest reads the newest ZIP in release/
+# and checks every source a manifest entry names is really in it, and the config descriptor;
+# validate-notices checks THIRD-PARTY-NOTICES.md reproduces the licence text of each component
+# core's rule set knows the vendored loader redistributes. No depends-on: both run after packaging.
+validate-manifest = "node cameraunlock-core/scripts/validate-manifest.mjs"
+validate-notices = "node cameraunlock-core/scripts/validate-notices.mjs"
+
 # Validate release readiness
 validate-release = "powershell -ExecutionPolicy Bypass -File scripts/validate-release.ps1"
 
 # Full release workflow (validate, build, package)
 release = "powershell -ExecutionPolicy Bypass -File scripts/release.ps1"
+
+[dependencies]
+# Node runs the canonical config lint in `test`, which `package` depends on, and
+# validate-manifest. Pinned to the release cameraunlock-core's own lock resolves.
+nodejs = "==26.5.0"

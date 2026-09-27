@@ -4,6 +4,8 @@
 
 An unofficial head tracking mod for Shadows of Doubt that moves the view with your head while your mouse or controller keeps aiming, driven by a webcam, phone, or any OpenTrack compatible tracker, with no VR headset required.
 
+> **Settings have moved.** The mod now keeps its settings in `BepInEx\config\CameraUnlock.ini`. If you ran an earlier build, the first start of this one reads your settings from `BepInEx\config\com.headtracking.shadowsofdoubt.cfg` and never changes that file. BepInEx's ConfigurationManager no longer lists these settings: edit `CameraUnlock.ini` with any text editor. See [Configuration](#configuration).
+
 ## Features
 
 - **Decoupled look and aim** - head tracking moves the camera; aim stays on your mouse or controller
@@ -125,95 +127,121 @@ Two equivalent binding sets. Use whichever your keyboard has.
 3. Rotation disabled, position only.
 4. Back to normal.
 
+The keys are the `ToggleKey`, `CycleTrackingModeKey` and `YawModeKey` lists in the
+config file, and each can be rebound, chords included. The tracking mode and the
+yaw mode you switch to are saved to `CameraUnlock.ini` and come back at the next
+start. Turning tracking on or off is not saved: the mod starts with tracking on or
+off as `EnableOnStartup` says.
+
 ## Configuration
 
-The mod creates a config file at `BepInEx/config/com.headtracking.shadowsofdoubt.cfg` on first run. Edit it to customize:
+<!-- cameraunlock:config -->
+The mod reads its settings from `BepInEx\config\CameraUnlock.ini` in the game folder, and creates the file when it starts and finds none. Edit it with any text editor.
 
-A comment has to sit on its own line. BepInEx splits each line at the first `=`
-and takes everything after it as the value, so a trailing `# note` becomes part
-of the value, the conversion fails, and the entry silently keeps its default.
-The only trace is a line in `BepInEx/LogOutput.log`. Put explanations above the
-key, never after it.
+A setting set to `default` takes its value from `Defaults.ini`, which every head tracking mod that keeps its settings in `CameraUnlock.ini` reads. Head tracking mods that keep their settings in another file do not read it. Writing a value in place of `default` changes that setting for this game only. When the mod saves a setting that a hotkey changed in game, it writes the new value in place of `default`, so that setting no longer follows `Defaults.ini` in this game until you set it to `default` again.
+
+`Defaults.ini` is `%AppData%\CameraUnlock\Defaults.ini` on Windows; `$XDG_CONFIG_HOME/CameraUnlock/Defaults.ini` on Linux, or `~/.config/CameraUnlock/Defaults.ini` where `XDG_CONFIG_HOME` is not set, under Wine and Proton too; and `~/Library/Application Support/CameraUnlock/Defaults.ini` on macOS. The mod's log, where it writes one, names the file it read.
+
+When the mod starts and finds no `Defaults.ini`, it creates one holding the built-in values, unless Windows runs the game as a packaged app, or the game runs on Linux or macOS without Wine or Proton. The mod never changes `Defaults.ini` after that. Edit it with any text editor.
+
+On Linux and macOS without Wine or Proton, this version reads its settings and saves none: it creates no `CameraUnlock.ini` and a change made in game lasts until the game closes.
+
+BepInEx's ConfigurationManager does not list these settings.
+
+The built-in value of each setting set to `default` below:
+
+- `EnableOnStartup=true`
+- `WorldSpaceYaw=true`
+- `RotationEnabled=true`
+- `LocalSmoothing=0.0`
+- `RemoteSmoothing=0.15`
+- `PositionEnabled=true`
+- `PositionLimitX=0.3`
+- `PositionLimitY=0.2`
+- `PositionLimitYDown=0.2`
+- `PositionLimitZ=0.4`
+- `PositionLimitZBack=0.1`
+- `ToggleKey=End, Ctrl+Shift+Y`
+- `CycleTrackingModeKey=PageUp, Ctrl+Shift+G`
+- `YawModeKey=PageDown, Ctrl+Shift+H`
+
+With every setting at its default, the file reads:
 
 ```ini
+; Shadows of Doubt head tracking settings.
+; Comments start with ; and go on their own line. Text after a value is part of the value.
+; Hotkeys are key names such as End, PageUp or Ctrl+Shift+Y. Separate several with commas; leave empty for none.
+; A setting set to default takes its value from Defaults.ini, which every head tracking mod
+; that keeps its settings in CameraUnlock.ini reads: %AppData%\CameraUnlock\Defaults.ini on
+; Windows, $XDG_CONFIG_HOME/CameraUnlock/Defaults.ini (normally ~/.config/CameraUnlock) on
+; Linux, under Wine and Proton too, and ~/Library/Application Support/CameraUnlock/Defaults.ini
+; on macOS. The log names the file it read. Write a value instead of default to change that
+; setting for this game only.
+
+[CameraUnlock]
+; Written by the mod. Leave this section in place.
+ConfigFormat=1
+
 [General]
-# Start with tracking enabled
-EnabledOnStartup = true
-# true = horizon-locked yaw (default), false = camera-local
-WorldSpaceYaw = true
-
-[Behavior]
-# Pause tracking when alt-tabbed
-PauseOnLostFocus = true
-# Write the camera rig, frame-phase and pose probes to HeadTracking.log.
-# Only for producing a diagnostic log; it writes several lines every few seconds.
-DiagnosticLogging = false
-
-[Camera]
-# Degrees added to the game's own Field of View slider (-30 to 60)
-FieldOfViewOffset = 0.0
-
-[Hotkeys]
-ToggleKey = End
-TogglePositionKey = PageUp
-# Toggle world-locked vs camera-local yaw
-YawModeKey = PageDown
-
-[Sensitivity]
-# Horizontal rotation (-5.0 to 5.0)
-YawSensitivity = 1.0
-# Vertical rotation (-5.0 to 5.0)
-PitchSensitivity = 1.0
-# Tilt (-5.0 to 5.0)
-RollSensitivity = 1.0
-
-[CoordinateTransform]
-InvertYaw = false
-# Default matches OpenTrack to Unity
-InvertPitch = true
-InvertRoll = false
-
-[Position]
-# Enable lean/positional tracking
-PositionEnabled = true
-# Lateral sensitivity (0.0-3.0)
-PositionSensitivityX = 2.0
-# Vertical sensitivity (0.0-3.0)
-PositionSensitivityY = 2.0
-# Depth sensitivity (0.0-3.0)
-PositionSensitivityZ = 2.0
-# Max lateral offset in meters
-PositionLimitX = 0.30
-# Max upward offset in meters
-PositionLimitY = 0.15
-# Max downward offset in meters
-PositionLimitYDown = 0.05
-# Max forward offset in meters
-PositionLimitZ = 0.40
-# Max backward offset in meters
-PositionLimitZBack = 0.10
+; true: head tracking is on when the game starts. ToggleKey turns it on and off.
+EnableOnStartup=default
+; true: yaw turns around the world's up axis. false: around the camera's own up axis.
+WorldSpaceYaw=default
+; true: turning your head turns the view.
+; Tracking mode at startup, with PositionEnabled. The mode hotkey changes both.
+RotationEnabled=default
+; true: head tracking stops moving the view while the game window is not focused.
+PauseOnLostFocus=true
 
 [Smoothing]
-# Tracker on this machine (loopback), 0 = none, 1 = heavy
-LocalSmoothing = 0.0
-# Tracker on a remote network device, 0 = none, 1 = heavy
-RemoteSmoothing = 0.15
+; Smoothing when the tracker runs on this PC. 0 is the least, 1 the most.
+LocalSmoothing=default
+; Smoothing when the tracker is another device on the network, such as a phone.
+; 0 is the least, 1 the most.
+RemoteSmoothing=default
+
+[Position]
+; true: moving your head moves the view.
+; Tracking mode at startup, with RotationEnabled. The mode hotkey changes both.
+PositionEnabled=default
+; How far, in metres, leaning left or right can move the view.
+PositionLimitX=default
+; How far, in metres, raising your head can move the view.
+PositionLimitY=default
+; How far, in metres, lowering your head can move the view.
+PositionLimitYDown=default
+; How far, in metres, leaning forward can move the view.
+PositionLimitZ=default
+; How far, in metres, leaning back can move the view.
+PositionLimitZBack=default
+
+[Hotkeys]
+; Turns head tracking on and off.
+ToggleKey=default
+; Changes the tracking mode: rotation and position, rotation only, position only.
+CycleTrackingModeKey=default
+; Switches yaw between the world's up axis and the camera's own (WorldSpaceYaw).
+YawModeKey=default
+
+[Camera]
+; Degrees added to the field of view the game renders with, on top of the
+; Field of View slider in the game's own settings. 0 leaves the game's value alone.
+; The game's sprint kick and interaction zoom still work on top of it.
+FieldOfViewOffset=0.0
+
+[Diagnostics]
+; true: write the camera rig, frame-phase and pose probes to HeadTracking.log.
+; Verbose; turn it on when reporting a problem.
+DiagnosticLogging=false
 ```
-
-Both smoothing values cover rotation and position; the mod picks one per
-connection from the packet source address.
-
-`FieldOfViewOffset` widens the view past what the game's own Field of View
-slider allows. It is added to whatever the game renders with, so the sprint kick
-and the interaction zoom still work, and the crosshair compensation follows it
-automatically.
+<!-- /cameraunlock:config -->
 
 ## Troubleshooting
 
 The mod writes `HeadTracking.log` next to `Shadows of Doubt.exe`. It holds this
 mod's lines only, and it starts fresh on every launch, so it is the first thing
-to read and the thing to attach to a bug report. Setting `DiagnosticLogging =
-true` adds the camera rig and pose probes to it.
+to read and the thing to attach to a bug report. Setting `DiagnosticLogging=true`
+adds the camera rig and pose probes to it.
 
 **Mod not loading:**
 - Ensure BepInEx 6.x IL2CPP is installed (not BepInEx 5.x).
@@ -230,18 +258,19 @@ true` adds the camera rig and pose probes to it.
 
 **Jittery or unstable tracking:**
 - Raise `RemoteSmoothing` toward `0.30` for a phone or other network tracker, or `LocalSmoothing` for a tracker running on this PC. Write the value with nothing after it on the line.
-- Drop the per-axis sensitivity values closer to `1.0` if the camera overshoots.
+- Lower the sensitivity in your tracker app if the camera overshoots. The mod has no sensitivity setting of its own.
 - For wireless phone trackers on WiFi, prefer a wired PC and a 5GHz connection to reduce packet jitter.
 
 **Camera moves in the wrong direction:**
-- Toggle `InvertYaw`, `InvertPitch`, or `InvertRoll` in the config file (or use a negative sensitivity value).
+- Invert that axis in your tracker app. The mod has no axis inversion setting of its own.
 - For yaw drift at extreme up/down angles, switch yaw mode with `Page Down` (or `Ctrl+Shift+H`). World-locked is horizon-stable; camera-local follows the camera's current up-axis.
 
 **View is off-center:**
 - Center in your tracker app: OpenTrack's Center bind, the CENTER button in a phone app, or your headset's own centering.
 
 **A config edit had no effect:**
-- Make sure nothing follows the value on the line. A trailing `# comment` is read as part of the value, the entry falls back to its default, and the game gives no sign of it. `BepInEx/LogOutput.log` records the failed conversion.
+- Make sure nothing follows the value on the line. Text after a value is part of the value, so a trailing comment makes the line unreadable. The mod's log names each line of `CameraUnlock.ini` it could not read.
+- Settings are read at startup. Restart the game after editing the file.
 
 ## Updating
 

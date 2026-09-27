@@ -2,7 +2,6 @@
 // Copyright (c) 2026 itsloopyo
 
 using System;
-using UnityEngine;
 
 namespace ShadowsOfDoubtHeadTracking.Input;
 
@@ -12,7 +11,7 @@ namespace ShadowsOfDoubtHeadTracking.Input;
 public readonly struct HotkeyDiagnostics
 {
     public bool IsInitialized { get; init; }
-    public KeyCode ToggleKey { get; init; }
+    public string ToggleKey { get; init; }
     public int ToggleCount { get; init; }
     public DateTime LastToggleTime { get; init; }
     public bool IsTrackingEnabled { get; init; }

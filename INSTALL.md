@@ -94,74 +94,7 @@ BepInEx's own `BepInEx/LogOutput.log` covers everything before the mod loads.
 
 ## Configuration
 
-The mod creates a config file at `BepInEx/config/com.headtracking.shadowsofdoubt.cfg` on first run.
-
-A comment has to sit on its own line. BepInEx splits each line at the first `=`
-and takes everything after it as the value, so a trailing `# note` becomes part
-of the value, the conversion fails, and the entry silently keeps its default -
-the only trace is a line in `BepInEx/LogOutput.log`. Put explanations above the
-key, never after it.
-
-```ini
-[General]
-# Start with tracking enabled
-EnabledOnStartup = true
-# true = horizon-locked yaw (default), false = camera-local
-WorldSpaceYaw = true
-
-[Behavior]
-# Pause tracking when alt-tabbed
-PauseOnLostFocus = true
-# Write the camera rig, frame-phase and pose probes to HeadTracking.log.
-# Only for producing a diagnostic log - it writes several lines every few seconds.
-DiagnosticLogging = false
-
-[Hotkeys]
-ToggleKey = End
-TogglePositionKey = PageUp
-# Toggle world-locked vs camera-local yaw
-YawModeKey = PageDown
-
-[Sensitivity]
-# Horizontal rotation (-5.0 to 5.0)
-YawSensitivity = 1.0
-# Vertical rotation (-5.0 to 5.0)
-PitchSensitivity = 1.0
-# Tilt (-5.0 to 5.0)
-RollSensitivity = 1.0
-
-[CoordinateTransform]
-InvertYaw = false
-# Default matches OpenTrack to Unity
-InvertPitch = true
-InvertRoll = false
-
-[Position]
-# Enable lean/positional tracking
-PositionEnabled = true
-# Lateral sensitivity (0.0-3.0)
-PositionSensitivityX = 2.0
-# Vertical sensitivity (0.0-3.0)
-PositionSensitivityY = 2.0
-# Depth sensitivity (0.0-3.0)
-PositionSensitivityZ = 2.0
-# Max lateral offset in meters
-PositionLimitX = 0.30
-# Max upward offset in meters
-PositionLimitY = 0.15
-# Max downward offset in meters
-PositionLimitYDown = 0.05
-# Max forward offset in meters
-PositionLimitZ = 0.40
-# Max backward offset in meters
-PositionLimitZBack = 0.10
-
-[Smoothing]
-# Tracker on this machine (loopback), 0 = none, 1 = heavy
-LocalSmoothing = 0.0
-# Tracker on a remote network device, 0 = none, 1 = heavy
-RemoteSmoothing = 0.15
-```
+The mod keeps its settings in `BepInEx\config\CameraUnlock.ini` and creates the file when it starts and finds none. Edit it with any text editor; BepInEx's ConfigurationManager does not list these settings. If you ran an earlier build, the first start reads your settings from `BepInEx\config\com.headtracking.shadowsofdoubt.cfg` and never changes that file. The README's Configuration section lists every setting and what `default` means.
 
 ## Troubleshooting
 
@@ -185,12 +118,12 @@ Run the game once after installing BepInEx to generate the required assemblies.
 
 ### Wrong movement direction
 
-- Adjust `InvertYaw`, `InvertPitch`, or `InvertRoll` in the config file
-- Or use negative sensitivity values
+- Invert that axis in your tracker app. The mod has no axis inversion setting of its own.
 
 ### A config edit had no effect
 
-- Make sure nothing follows the value on the line. A trailing `# comment` is read as part of the value, the entry falls back to its default, and the game gives no sign of it. `BepInEx/LogOutput.log` records the failed conversion.
+- Make sure nothing follows the value on the line. Text after a value is part of the value, so a trailing comment makes the line unreadable. The mod's log names each line of `CameraUnlock.ini` it could not read.
+- Settings are read at startup. Restart the game after editing the file.
 
 ### Game crashes on startup
 

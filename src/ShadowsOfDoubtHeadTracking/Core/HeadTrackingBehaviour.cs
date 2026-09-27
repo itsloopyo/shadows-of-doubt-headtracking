@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 itsloopyo
 
+using System;
+using CameraUnlock.Core.Config;
 using CameraUnlock.Core.Data;
 using CameraUnlock.Core.Math;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
+using CameraUnlock.Core.Tracking;
 using ShadowsOfDoubtHeadTracking.Camera;
 using ShadowsOfDoubtHeadTracking.Configuration;
 using ShadowsOfDoubtHeadTracking.Diagnostics;
@@ -53,6 +56,9 @@ public class HeadTrackingBehaviour : MonoBehaviour
     private readonly CameraViewWriter _viewWriter = new();
     private readonly GameWindowPlacer _windowPlacer = new();
 
+    private Action<Action<ShadowsOfDoubtConfig>>? _saveConfig;
+
+    private TrackingMode _trackingMode;
     private bool _positionEnabled = true;
     private bool _rotationEnabled = true;
     private bool _worldSpaceYaw = true;
@@ -115,24 +121,26 @@ public class HeadTrackingBehaviour : MonoBehaviour
     /// Initialize the behaviour with all required dependencies.
     /// Must be called after the component is added to a GameObject.
     /// </summary>
-    internal void Initialize(OpenTrackReceiver receiver, TrackingProcessor processor, ModConfig config,
+    internal void Initialize(OpenTrackReceiver receiver, TrackingProcessor processor, ShadowsOfDoubtConfig config,
+        Action<Action<ShadowsOfDoubtConfig>> saveConfig,
         PositionProcessor? positionProcessor = null, PositionInterpolator? positionInterpolator = null)
     {
         _receiver = receiver;
         _processor = processor;
         _positionProcessor = positionProcessor;
         _positionInterpolator = positionInterpolator;
+        _saveConfig = saveConfig;
 
         _pauseOnLostFocus = config.PauseOnLostFocus;
         _worldSpaceYaw = config.WorldSpaceYaw;
-        _positionEnabled = config.PositionEnabled;
+        // The table reads a pair that names no mode as its default, so the pair always names one.
+        SetTrackingMode(TrackingModeChannels.Decode(config.RotationEnabled, config.PositionEnabled)!.Value);
         _fieldOfView = new FieldOfViewOffset(config.FieldOfViewOffset);
 
         _cameraFinder = new CameraFinder();
         _cameraFinder.OnCameraChanged += OnCameraChanged;
 
         _hotkeyHandler = new HotkeyHandler(config);
-        _hotkeyHandler.Initialize();
 
         _stateDetector = new GameplayStateDetector();
         _stateDetector.Initialize();
@@ -446,31 +454,16 @@ public class HeadTrackingBehaviour : MonoBehaviour
     }
 
     /// <summary>
-    /// Advances the tracking-mode cycle one step. Three states:
-    ///   0: rotation + position (normal)
-    ///   1: rotation only       (position disabled)
-    ///   2: position only       (rotation disabled)
-    /// State 2 wraps back to 0. Called from HotkeyHandler.
+    /// Advances the tracking-mode cycle one step: rotation and position, then rotation only,
+    /// then position only, then back. The new mode is saved, so the next start begins with it.
+    /// Called from HotkeyHandler.
     /// </summary>
     public static void CycleTrackingMode()
     {
         var inst = _instance;
         if (inst == null) return;
 
-        if (inst._rotationEnabled && inst._positionEnabled)
-        {
-            inst._positionEnabled = false;
-        }
-        else if (inst._rotationEnabled)
-        {
-            inst._rotationEnabled = false;
-            inst._positionEnabled = true;
-        }
-        else
-        {
-            inst._rotationEnabled = true;
-            inst._positionEnabled = true;
-        }
+        inst.SetTrackingMode((TrackingMode)(((int)inst._trackingMode + 1) % 3));
 
         // Drop stale velocity/interpolation state so re-entry doesn't replay it.
         if (!inst._positionEnabled)
@@ -482,20 +475,37 @@ public class HeadTrackingBehaviour : MonoBehaviour
 
         HeadTrackingPlugin.Logger.LogInfo(
             $"Tracking mode: rotation={(inst._rotationEnabled ? "on" : "off")}, position={(inst._positionEnabled ? "on" : "off")}");
+
+        bool rotation = inst._rotationEnabled;
+        bool position = inst._positionEnabled;
+        inst._saveConfig!(c =>
+        {
+            c.RotationEnabled = rotation;
+            c.PositionEnabled = position;
+        });
+    }
+
+    private void SetTrackingMode(TrackingMode mode)
+    {
+        _trackingMode = mode;
+        TrackingModeChannels.Encode(mode, out _rotationEnabled, out _positionEnabled);
     }
 
     /// <summary>
-    /// Toggles between world-space (horizon-locked) and camera-local yaw.
-    /// Called from HotkeyHandler.
+    /// Toggles between world-space (horizon-locked) and camera-local yaw and saves it, so the
+    /// next start begins with it. Called from HotkeyHandler.
     /// </summary>
     public static void ToggleYawMode()
     {
         var inst = _instance;
         if (inst == null) return;
 
-        inst._worldSpaceYaw = !inst._worldSpaceYaw;
+        bool worldSpaceYaw = !inst._worldSpaceYaw;
+        inst._worldSpaceYaw = worldSpaceYaw;
         HeadTrackingPlugin.Logger.LogInfo(
-            $"Yaw mode: {(inst._worldSpaceYaw ? "world-space (horizon-locked)" : "camera-local")}");
+            $"Yaw mode: {(worldSpaceYaw ? "world-space (horizon-locked)" : "camera-local")}");
+
+        inst._saveConfig!(c => c.WorldSpaceYaw = worldSpaceYaw);
     }
 
     private void ResetSmoothing()
