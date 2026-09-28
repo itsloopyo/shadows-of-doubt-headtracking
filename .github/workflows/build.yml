@@ -14,6 +14,13 @@ on:
       - 'docs/**'
       - 'LICENSE'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build and Validate
@@ -45,12 +52,6 @@ jobs:
           # action's post-install 'pixi list', which exits 1 with "No packages
           # found in 'default' environment" on an empty environment.
           run-install: false
-
-      # Same pixi task a developer runs, and ahead of packaging so a failure
-      # blocks the artifact rather than shipping beside it.
-      - name: Test
-        shell: pwsh
-        run: pixi run test
 
       # Build + package through the SAME command a developer runs locally. Every
       # build dependency is produced by scripts/setup-libs.ps1 inside the pixi

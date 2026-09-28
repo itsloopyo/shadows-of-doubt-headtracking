@@ -12,7 +12,7 @@ Shadows of Doubt.
 | Component | Version | Licence | How it ships |
 |-----------|---------|---------|--------------|
 | BepInEx | 6.0.0-be.785 | LGPL-2.1 | Bundled verbatim in the installer ZIP |
-| cameraunlock-core | ac271752d8fcf37e793b70744aa8eb12588d91ea | MIT | Shipped as `CameraUnlock.Core.dll` and `CameraUnlock.Core.Unity.dll` |
+| cameraunlock-core | a03c24290fae3a9c61f67adcb7c5ba4eedf69f20 | MIT | Shipped as `CameraUnlock.Core.dll` and `CameraUnlock.Core.Unity.dll` |
 | HarmonyX / Lib.Harmony | ships with BepInEx 6 IL2CPP | MIT | Bundled inside the BepInEx distribution in the installer ZIP |
 | Il2CppInterop | ships with BepInEx 6 IL2CPP | LGPL-3.0 | Bundled inside the BepInEx distribution in the installer ZIP |
 | OpenTrack | n/a | ISC | Not bundled; UDP protocol interoperability only |
@@ -530,7 +530,7 @@ Git submodule at `cameraunlock-core/`, built into `CameraUnlock.Core.dll` and
 MIT licensed under the same copyright holder as this repository, so the root
 `LICENSE` covers it. Reproduced here so the notices are complete.
 
-- **Version:** commit `ac271752d8fcf37e793b70744aa8eb12588d91ea`
+- **Version:** commit `a03c24290fae3a9c61f67adcb7c5ba4eedf69f20`
 - **License:** MIT
 - **Upstream:** https://github.com/itsloopyo/cameraunlock-core
 - **Usage:** Shared tracking pipeline: UDP receiver, pose interpolation, smoothing and view-matrix maths.
