@@ -2,7 +2,6 @@
 // Copyright (c) 2026 itsloopyo
 
 using System;
-using System.Collections.Generic;
 using CameraUnlock.Core.Input;
 using CameraUnlock.Core.Unity.Extensions;
 using ShadowsOfDoubtHeadTracking.Configuration;
@@ -75,21 +74,13 @@ public sealed class HotkeyHandler
             $"Head tracking {(newState ? "ENABLED" : "DISABLED")}");
     }
 
-    // The table's hotkey codec has read every list the file holds, so a list that does not parse
-    // reaches here only from a legacy import the owner deferred: a .cfg key code Unity names no key
-    // for, which the import writes as the number. The items that parse, the chord among them, are
-    // bound and the rest are named in the log.
+    // The table's hotkey codec has read every list the file holds, and the legacy import writes
+    // only key lists, so a list that does not parse is a bug.
     private static KeyBinding[] Parse(string key, string text)
     {
-        if (KeyBindings.TryParse(text, out KeyBinding[] bindings, out _)) return bindings;
-
-        var kept = new List<KeyBinding>();
-        foreach (string item in text.Split(','))
-        {
-            if (KeyBindings.TryParse(item, out bindings, out string? error)) kept.AddRange(bindings);
-            else HeadTrackingPlugin.Logger.LogWarning($"[Hotkeys] {key}: {error}, so it is not bound this session");
-        }
-        return kept.ToArray();
+        if (!KeyBindings.TryParse(text, out KeyBinding[] bindings, out string? error))
+            throw new InvalidOperationException($"[Hotkeys] {key}={text}: {error}");
+        return bindings;
     }
 
     /// <summary>
